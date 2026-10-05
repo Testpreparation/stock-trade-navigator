@@ -2,11 +2,10 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# ページ基本設定
 st.set_page_config(page_title="株式トレード判定ナビ", layout="wide")
-st.title("📊 株式トレード判定ナビ（全自動取得版）")
+st.title("📊 株式トレード判定ナビ")
 
-# 1. サイドバー：設定エリア
+# 1. サイドバー設定
 st.sidebar.header("⚙️ 保有・目標設定")
 symbol = st.sidebar.text_input("銘柄コード", value="6758.T")
 stock_name = st.sidebar.text_input("銘柄名", value="ソニーグループ")
@@ -27,24 +26,23 @@ stop_loss = st.sidebar.number_input(
     "損切り検討ライン (○円以下)", value=2900.0, step=10.0
 )
 
-# 2. 自動株価取得（yfinance）
+# 2. 自動株価取得
 ticker = yf.Ticker(symbol)
 hist = ticker.history(period="1d")
 
 if not hist.empty:
     current_price = round(hist["Close"].iloc[-1], 1)
 
-    # 各種計算
     total_invested = avg_price * hold_shares
     current_total = current_price * hold_shares
     profit_loss = current_total - total_invested
     profit_rate = (profit_loss / total_invested) * 100
 
-    # 3. 画面メイン表示
+    # 3. 画面表示
     st.subheader(f"📌 {stock_name} ({symbol}) のリアルタイム診断")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("現在株価（自動取得）", f"{current_price:,} 円")
+    col1.metric("現在株価", f"{current_price:,} 円")
     col2.metric("平均取得単価", f"{avg_price:,} 円")
     col3.metric(
         "評価損益",
@@ -60,14 +58,11 @@ if not hist.empty:
 
     if current_price >= sell_target:
         st.success(
-            f"🎉 **【売り時（利益確定）です】**\n\n"
-            f"現在株価（{current_price}円）が利確ライン（{sell_target}円）に達しました！\n"
-            f"手残り利益（概算）: **{int(profit_loss):,} 円**"
+            f"🎉 **【売り時（利益確定）です】**\n\n現在株価（{current_price}円）が利確ライン（{sell_target}円）に達しました！"
         )
     elif current_price <= stop_loss:
         st.error(
-            f"⚠️ **【損切り検討エリアです】**\n\n"
-            f"現在株価（{current_price}円）が撤退ライン（{stop_loss}円）を下回りました。"
+            f"⚠️ **【損切り検討エリアです】**\n\n現在株価（{current_price}円）が撤退ライン（{stop_loss}円）を下回りました。"
         )
     elif current_price <= buy_target:
         add_shares = 5
@@ -77,16 +72,11 @@ if not hist.empty:
             2,
         )
         st.warning(
-            f"🛒 **【買い足し（買増し）チャンスです】**\n\n"
-            f"現在株価（{current_price}円）が買い足しライン（{buy_target}円以下）に入りました。\n\n"
-            f"・+{add_shares}株追加時の新平均単価: **{new_avg:,} 円**"
+            f"🛒 **【買い足しチャンスです】**\n\n現在株価（{current_price}円）が買い足しライン（{buy_target}円以下）に入りました。\n\n・+{add_shares}株追加時の新平均単価: **{new_avg:,} 円**"
         )
     else:
         st.info(
-            f"☕ **【継続保有（静観）モード】**\n\n"
-            f"利確（{sell_target}円）まで あと **{round(sell_target - current_price, 1)}円**\n\n"
-            f"買い足し（{buy_target}円）まで あと **{round(current_price - buy_target, 1)}円**"
+            f"☕ **【継続保有（静観）モード】**\n\n利確まで あと **{round(sell_target - current_price, 1)}円** ／ 買い足しまで あと **{round(current_price - buy_target, 1)}円**"
         )
-
 else:
     st.error("株価データの取得に失敗しました。銘柄コードを確認してください。")
